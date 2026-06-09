@@ -89,12 +89,7 @@ input[type=file]{position:absolute;left:-9999px;opacity:0;width:1px;height:1px}
 /* שורת סטטוס אחסון */
 #storage-info{font-size:11px;color:#718096;text-align:center;padding:4px;display:none}
 
-/* שם מפעל */
-#facility-bar{background:#0e2a4a;padding:8px 16px;display:flex;align-items:center;gap:8px;border-bottom:1px solid rgba(255,255,255,.1)}
-#facility-bar input{flex:1;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);border-radius:6px;padding:7px 10px;font-size:14px;color:white;font-family:Arial,sans-serif;direction:rtl}
-#facility-bar input::placeholder{color:rgba(255,255,255,.5)}
-#facility-bar input:focus{outline:none;background:rgba(255,255,255,.2);border-color:rgba(255,255,255,.5)}
-#facility-bar label{color:rgba(255,255,255,.7);font-size:12px;white-space:nowrap;margin:0}
+
 </style>
 </head>
 <body>
@@ -111,11 +106,6 @@ input[type=file]{position:absolute;left:-9999px;opacity:0;width:1px;height:1px}
   <span>הרי נצרת מפעלי מים וביוב בע"מ</span>
 </header>
 
-<div id="facility-bar">
-  <label>🏭</label>
-  <input type="text" id="facility-name" placeholder="שם המפעל / העסק..." autocomplete="off">
-</div>
-
 <div id="storage-info"></div>
 
 <nav>
@@ -130,9 +120,19 @@ input[type=file]{position:absolute;left:-9999px;opacity:0;width:1px;height:1px}
 <!-- REGISTRATION -->
 <div class="page active" id="page-reg">
   <div class="steps">
-    <div class="step active" id="s1"></div>
+    <div class="step active" id="s0"></div>
+    <div class="step" id="s1"></div>
     <div class="step" id="s2"></div>
     <div class="step" id="s3"></div>
+  </div>
+
+  <!-- שלב 0 — ישוב ומפעל -->
+  <div class="card">
+    <h3>🏘️ שלב 0 — מיקום הרישום</h3>
+    <label>שם ישוב *</label>
+    <input type="text" id="city-name" placeholder="לדוגמה: נצרת, יפיע, עילוט...">
+    <label>שם המפעל / העסק *</label>
+    <input type="text" id="facility-name" placeholder="לדוגמה: תחנת שאיבה, מגדל מים...">
   </div>
 
   <div class="card">
@@ -410,6 +410,8 @@ document.addEventListener('DOMContentLoaded', function() {
   // Text inputs
   document.getElementById('mz-id').addEventListener('input', updateSteps);
   document.getElementById('mt-id').addEventListener('input', updateSteps);
+  document.getElementById('city-name').addEventListener('input', updateSteps);
+  document.getElementById('facility-name').addEventListener('input', updateSteps);
 
   // Location
   document.getElementById('btn-loc').addEventListener('click', getLocation);
@@ -419,13 +421,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Search
   document.getElementById('search-inp').addEventListener('input', renderList);
-
-  // שם מפעל — שמור ב-localStorage
-  var savedFacility = localStorage.getItem('facility_name') || '';
-  document.getElementById('facility-name').value = savedFacility;
-  document.getElementById('facility-name').addEventListener('input', function(){
-    localStorage.setItem('facility_name', this.value);
-  });
 
   // Init DB + request persistence
   DB.init(function(){ updateSteps(); });
@@ -448,13 +443,18 @@ function showPage(name, btn) {
 // STEPS
 // ============================================================
 function updateSteps() {
+  var city = document.getElementById('city-name').value.trim();
+  var fac  = document.getElementById('facility-name').value.trim();
   var mzid = document.getElementById('mz-id').value.trim();
   var sz   = document.getElementById('mz-size').value;
   var cal  = document.getElementById('calib-val').value;
   var mt   = document.getElementById('prev-mt');
   var hasPhoto = mt && mt.style.display !== 'none' && mt.src && mt.src.indexOf('data:') === 0;
-  document.getElementById('s1').className = 'step'+(mzid&&sz&&cal?' done':' active');
-  document.getElementById('s2').className = 'step'+(!mzid||!sz||!cal?'':(hasPhoto?' done':' active'));
+  var step0done = city && fac;
+  var step1done = mzid && sz && cal;
+  document.getElementById('s0').className = 'step'+(step0done?' done':' active');
+  document.getElementById('s1').className = 'step'+(!step0done?'':(step1done?' done':' active'));
+  document.getElementById('s2').className = 'step'+(!step1done?'':(hasPhoto?' done':' active'));
   document.getElementById('s3').className = 'step'+(hasPhoto?' done':'');
 }
 
@@ -617,6 +617,7 @@ function getLocation() {
 // SAVE
 // ============================================================
 function saveRecord() {
+  var city  = document.getElementById('city-name').value.trim();
   var mzid  = document.getElementById('mz-id').value.trim();
   var mzsz  = document.getElementById('mz-size').value;
   var calib = document.getElementById('calib-val').value;
@@ -632,6 +633,8 @@ function saveRecord() {
   var mzImg = (mzEl.style.display!=='none'&&mzEl.src.indexOf('data:')===0)?mzEl.src:'';
   var mtImg = (mtEl.style.display!=='none'&&mtEl.src.indexOf('data:')===0)?mtEl.src:'';
 
+  if(!city)  { toast('⚠️ יש להזין שם ישוב'); return; }
+  if(!document.getElementById('facility-name').value.trim()) { toast('⚠️ יש להזין שם מפעל'); return; }
   if(!mzid)  { toast('⚠️ יש להזין מספר מז"ח'); return; }
   if(!mzsz)  { toast('⚠️ יש לבחור קוטר מז"ח'); return; }
   if(!calib) { toast('⚠️ יש לסמן אם יש כיול בתוקף'); return; }
@@ -639,7 +642,7 @@ function saveRecord() {
   if(!mtImg) { toast('⚠️ יש לצלם תמונה של מד המים'); return; }
 
   DB.add({
-    id:Date.now(), mzid:mzid, mzsz:mzsz,
+    id:Date.now(), city:city, mzid:mzid, mzsz:mzsz,
     calib:calib, calibCheckDate:cdchk,
     mtid:mtid, mttyp:mttyp,
     lat:lat, lng:lng, acc:acc,
@@ -658,7 +661,7 @@ function saveRecord() {
 // RESET
 // ============================================================
 function resetForm() {
-  ['mz-id','calib-check-date','mt-id','notes','loc-lat','loc-lng','loc-acc','calib-val','mz-size']
+  ['city-name','facility-name','mz-id','calib-check-date','mt-id','notes','loc-lat','loc-lng','loc-acc','calib-val','mz-size']
     .forEach(function(id){ var el=document.getElementById(id); if(el) el.value=''; });
   document.getElementById('mt-type').value='';
   document.getElementById('calib-wrap').style.display='none';
@@ -691,7 +694,11 @@ function renderList() {
   cont.innerHTML=list.map(function(r){
     return '<div class="rec-card '+(r.calib==='yes'?'ok':'nok')+'">'+
       '<div class="rec-top"><div class="rec-id">🔧 '+esc(r.mzid)+'</div><div class="rec-date">'+esc(r.ts)+'</div></div>'+
-      (r.facility?'<div class="rec-detail" style="font-weight:bold;color:#1a56db;">🏭 '+esc(r.facility)+'</div>':'')+
+      '<div class="rec-detail">'+
+        (r.city?'🏘️ <strong>'+esc(r.city)+'</strong>':'')+
+        (r.city&&r.facility?' &nbsp;|&nbsp; ':'')+
+        (r.facility?'🏭 '+esc(r.facility):'')+
+      '</div>'+
       '<div class="rec-detail">💧 מד מים: <strong>'+(r.mtid?esc(r.mtid):'<span style="color:#a0aec0">ללא מספר</span>')+'</strong>'+(r.mttyp?' ('+esc(r.mttyp)+')':'')+'</div>'+
       '<div><span class="badge b-sz">'+esc(r.mzsz)+'</span>'+
       (r.calib==='yes'?'<span class="badge b-ok">✅ נבדק: '+esc(r.calibCheckDate||'')+'</span>':'<span class="badge b-no">❌ ללא כיול</span>')+
@@ -753,8 +760,8 @@ function renderStats(){
 function exportCSV(){
   var all=DB.getAll();
   if(!all.length){toast('אין נתונים לייצוא');return;}
-  var h=['תאריך','שם מפעל','מספר מז"ח','קוטר','כיול בתוקף','תאריך בדיקה','מספר מד מים','סוג מד','קו רוחב','קו אורך','דיוק GPS','הערות'];
-  var rows=all.map(function(r){return[r.ts,r.facility||'',r.mzid,r.mzsz,r.calib==='yes'?'כן':'לא',r.calibCheckDate||'',r.mtid||'',r.mttyp||'',r.lat||'',r.lng||'',r.acc||'',r.notes||''];});
+  var h=['תאריך','ישוב','שם מפעל','מספר מז"ח','קוטר','כיול בתוקף','תאריך בדיקה','מספר מד מים','סוג מד','קו רוחב','קו אורך','דיוק GPS','הערות'];
+  var rows=all.map(function(r){return[r.ts,r.city||'',r.facility||'',r.mzid,r.mzsz,r.calib==='yes'?'כן':'לא',r.calibCheckDate||'',r.mtid||'',r.mttyp||'',r.lat||'',r.lng||'',r.acc||'',r.notes||''];});
   var csv='\uFEFF'+[h].concat(rows).map(function(row){return row.map(function(v){return '"'+String(v).replace(/"/g,'""')+'"';}).join(',');}).join('\n');
   var a=document.createElement('a');
   a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
