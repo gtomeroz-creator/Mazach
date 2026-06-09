@@ -511,39 +511,86 @@ function setStatus(state, msg) {
   bar.textContent = msg;
 }
 
+function extractSerial(raw) {
+  if (!raw) return '';
+  // QR של ARAD מכיל hex בן 16 תווים כגון 70B3D5A9F00A9086
+  var match = raw.match(/([0-9A-Fa-f]{16})/);
+  if (match) return match[1].toUpperCase();
+  // Octave — מספר ליד S/N
+  match = raw.match(/S\/N[:\s]*([0-9]{6,12})/i);
+  if (match) return match[1];
+  // כל מחרוזת בת 6+ תווים
+  var clean = raw.trim().replace(/\s+/g,' ');
+  if (clean.length >= 6) return clean;
+  return '';
+}
+
 function identifyWithAI(file) {
-  // נסה BarcodeDetector (Chrome Android תומך)
-  if (typeof BarcodeDetector !== 'undefined') {
-    setStatus('scan', '🔍 סורק QR / ברקוד...');
-    var img = new Image();
-    img.onload = function() {
-      var detector = new BarcodeDetector({ formats: ['qr_code','code_128','code_39','data_matrix'] });
-      detector.detect(img).then(function(barcodes) {
-        if (barcodes && barcodes.length > 0) {
-          var raw = barcodes[0].rawValue || '';
-          // חלץ מספר סריאלי מתוך QR של ARAD (לדוגמה: ...;70B3D5A9F00A9086;...)
-          var match = raw.match(/([0-9A-Fa-f]{16})/);
-          var serial = match ? match[1].toUpperCase() : raw.trim();
-          if (serial && serial.length >= 4) {
-            document.getElementById('mt-id').value = serial;
-            setStatus('ok', '✅ זוהה: ' + serial + ' — ניתן לתקן');
-            updateSteps();
-            if(navigator.vibrate) navigator.vibrate([80,40,80]);
-            toast('✅ מספר מד זוהה!');
-          } else {
-            setStatus('err', '⚠️ QR נסרק אך מספר לא זוהה — הקלד ידנית');
-          }
-        } else {
-          setStatus('err', '⚠️ לא נמצא QR בתמונה — הקלד ידנית');
-        }
-      }).catch(function() {
-        setStatus('err', '⚠️ שגיאת סריקה — הקלד ידנית');
-      });
-    };
-    img.src = URL.createObjectURL(file);
-  } else {
-    setStatus('err', '⚠️ סריקה אוטומטית לא נתמכת — הקלד ידנית');
+  if (typeof BarcodeDetector === 'undefined') {
+    setStatus('err', '⚠️ סריקה אוטומטית לא נתמכת בדפדפן זה — הקלד ידנית');
+    return;
   }
+  setStatus('scan', '🔍 סורק QR / ברקוד...');
+
+  // השתמש ב-createImageBitmap — הכי אמין לזיהוי QR
+  createImageBitmap(file).then(function(bitmap) {
+    var detector = new BarcodeDetector({ formats: ['qr_code','data_matrix','code_128','code_39','ean_13'] });
+    return detector.detect(bitmap).then(function(barcodes) {
+      bitmap.close();
+      if (!barcodes || barcodes.length === 0) {
+        // נסיון שני — סרוק מה-canvas עם רזולוציה מלאה
+        return tryCanvasScan(file);
+      }
+      var serial = extractSerial(barcodes[0].rawValue);
+      if (serial) {
+        document.getElementById('mt-id').value = serial;
+        setStatus('ok', '✅ זוהה: ' + serial + ' — ניתן לתקן');
+        updateSteps();
+        if (navigator.vibrate) navigator.vibrate([80,40,80]);
+        toast('✅ מספר מד זוהה!');
+      } else {
+        setStatus('err', '⚠️ QR נסרק אך מספר לא זוהה — הקלד ידנית');
+      }
+    });
+  }).catch(function() {
+    tryCanvasScan(file);
+  });
+}
+
+function tryCanvasScan(file) {
+  // נסיון שני: טען ל-Image מלא ← צייר על canvas ← סרוק שוב
+  var url = URL.createObjectURL(file);
+  var img = new Image();
+  img.onload = function() {
+    var canvas = document.createElement('canvas');
+    canvas.width = img.naturalWidth;
+    canvas.height = img.naturalHeight;
+    canvas.getContext('2d').drawImage(img, 0, 0);
+    URL.revokeObjectURL(url);
+    var detector = new BarcodeDetector({ formats: ['qr_code','data_matrix','code_128','code_39'] });
+    detector.detect(canvas).then(function(barcodes) {
+      if (!barcodes || barcodes.length === 0) {
+        setStatus('err', '⚠️ לא נמצא QR — וודא שה-QR גלוי בתמונה, או הקלד ידנית');
+        return;
+      }
+      var serial = extractSerial(barcodes[0].rawValue);
+      if (serial) {
+        document.getElementById('mt-id').value = serial;
+        setStatus('ok', '✅ זוהה: ' + serial + ' — ניתן לתקן');
+        updateSteps();
+        if (navigator.vibrate) navigator.vibrate([80,40,80]);
+        toast('✅ מספר מד זוהה!');
+      } else {
+        setStatus('err', '⚠️ QR נסרק אך מספר לא זוהה — הקלד ידנית');
+      }
+    }).catch(function() {
+      setStatus('err', '⚠️ שגיאת סריקה — הקלד ידנית');
+    });
+  };
+  img.onerror = function() {
+    setStatus('err', '⚠️ שגיאת טעינת תמונה — הקלד ידנית');
+  };
+  img.src = url;
 }
 
 // ============================================================
