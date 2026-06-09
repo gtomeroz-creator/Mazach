@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#1a56db">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content='מז"ח'>
+<link rel="manifest" href="manifest.json">
+<title>מאגר מז"ח ומד מים</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Arial,sans-serif;background:#f0f4f8;color:#1a202c;min-height:100vh}
+header{background:linear-gradient(135deg,#1a56db,#0e9f6e);color:white;padding:14px 20px;text-align:center;font-size:18px;font-weight:bold}
+header span{font-size:12px;display:block;opacity:.9;margin-top:3px}
+nav{display:flex;background:#1e3a5f;position:sticky;top:0;z-index:100}
+nav button{flex:1;padding:13px 4px;background:none;border:none;color:#a0b4cc;font-size:12px;font-weight:bold;cursor:pointer;border-bottom:3px solid transparent;touch-action:manipulation}
+nav button.active{color:#fff;border-bottom-color:#0e9f6e;background:rgba(255,255,255,.07)}
+.page{display:none;padding:14px;max-width:600px;margin:0 auto;padding-bottom:50px}
+.page.active{display:block}
+.card{background:white;border-radius:12px;padding:16px;margin-bottom:14px;box-shadow:0 1px 6px rgba(0,0,0,.1)}
+.card h3{font-size:15px;color:#1a3a5f;margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid #e2e8f0}
+label{display:block;font-size:13px;font-weight:600;color:#4a5568;margin-bottom:5px;margin-top:13px}
+input[type=text],select,textarea{width:100%;border:1.5px solid #cbd5e0;border-radius:8px;padding:11px 12px;font-size:15px;font-family:Arial,sans-serif;direction:rtl;background:#f8fafc}
+input[type=text]:focus,select:focus{border-color:#1a56db;outline:none;background:#fff}
+textarea{min-height:60px;resize:vertical}
+.radio-group{display:flex;gap:10px;margin-top:6px}
+.radio-btn{flex:1;padding:12px;border:2px solid #cbd5e0;border-radius:8px;text-align:center;cursor:pointer;font-weight:bold;font-size:13px;background:#f8fafc;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.radio-btn.sel-yes{border-color:#0e9f6e;background:#f0fdf4;color:#065f46}
+.radio-btn.sel-no{border-color:#e53e3e;background:#fff5f5;color:#9b1c1c}
+.size-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:6px}
+.size-btn{padding:12px 4px;border:2px solid #cbd5e0;border-radius:8px;text-align:center;cursor:pointer;font-weight:bold;font-size:13px;background:#f8fafc;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.size-btn.selected{border-color:#1a56db;background:#ebf4ff;color:#1a56db}
+.cam-box{background:#1e3a5f;border-radius:10px;padding:16px;text-align:center;color:white;margin-bottom:12px}
+.cam-box.green{background:#0e4f3a}
+.cam-box p{font-size:12px;opacity:.8;margin-top:6px}
+.btn{display:block;width:100%;border:none;border-radius:8px;padding:14px;font-size:15px;font-weight:bold;cursor:pointer;margin-top:10px;color:white;text-align:center;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.btn-green{background:#0e9f6e}
+.btn-blue{background:#1a56db}
+.btn-save{background:linear-gradient(135deg,#1a56db,#0e9f6e);border-radius:10px;padding:15px;font-size:16px;width:100%;margin-top:10px}
+.btn-gray{background:#2d3748}
+.btn:active{opacity:.82}
+input[type=file]{position:absolute;left:-9999px;opacity:0;width:1px;height:1px}
+.preview-img{width:100%;border-radius:8px;margin-top:10px;display:none;max-height:200px;object-fit:cover;border:2px solid #0e9f6e}
+.status-bar{margin-top:10px;padding:10px 12px;border-radius:8px;font-size:13px;font-weight:bold;display:none}
+.s-scan{background:#fffbf0;color:#744210;border:1px solid #d69e2e;display:block}
+.s-ok{background:#f0fdf4;color:#065f46;border:1px solid #0e9f6e;display:block}
+.s-err{background:#fff5f5;color:#9b1c1c;border:1px solid #e53e3e;display:block}
+.loc-box{border-radius:8px;padding:10px 14px;font-size:13px;margin-top:8px;min-height:40px;line-height:1.6;border:1.5px solid #d69e2e;background:#fffbf0;color:#744210}
+.loc-ok{border-color:#0e9f6e;background:#f0fdf4;color:#065f46}
+.loc-err{border-color:#e53e3e;background:#fff5f5;color:#9b1c1c}
+.steps{display:flex;gap:6px;margin-bottom:14px}
+.step{flex:1;height:5px;border-radius:3px;background:#e2e8f0;transition:background .3s}
+.step.done{background:#0e9f6e}.step.active{background:#1a56db}
+.info-tip{font-size:11px;color:#718096;margin-top:5px;line-height:1.5}
+.rec-card{background:white;border-radius:10px;padding:14px;margin-bottom:10px;box-shadow:0 1px 5px rgba(0,0,0,.1);border-right:4px solid #1a56db}
+.rec-card.ok{border-right-color:#0e9f6e}.rec-card.nok{border-right-color:#e53e3e}
+.rec-top{display:flex;justify-content:space-between;align-items:flex-start}
+.rec-id{font-weight:bold;font-size:14px;color:#1a3a5f;word-break:break-all}
+.rec-date{font-size:11px;color:#718096;white-space:nowrap;margin-right:6px}
+.rec-detail{font-size:12px;color:#4a5568;margin-top:5px}
+.badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:bold;margin-top:5px;margin-left:4px}
+.b-ok{background:#f0fdf4;color:#065f46;border:1px solid #0e9f6e}
+.b-no{background:#fff5f5;color:#9b1c1c;border:1px solid #e53e3e}
+.b-sz{background:#ebf4ff;color:#1a3a5f;border:1px solid #1a56db}
+.b-loc{background:#faf5ff;color:#553c9a;border:1px solid #805ad5}
+.search-bar{display:flex;gap:8px;margin-bottom:12px}
+.search-bar input{flex:1}
+.empty{text-align:center;color:#a0aec0;padding:40px 20px}
+.empty .big{font-size:48px;margin-bottom:10px}
+.toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:#1a202c;color:white;padding:13px 26px;border-radius:24px;font-size:14px;opacity:0;transition:opacity .35s;z-index:9999;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1}
+.stats-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px}
+.stat-box{background:white;border-radius:10px;padding:12px 8px;text-align:center;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+.stat-box .num{font-size:26px;font-weight:bold;color:#1a56db}
+.stat-box .lbl{font-size:11px;color:#718096;margin-top:2px}
+.stat-box.green .num{color:#0e9f6e}.stat-box.red .num{color:#e53e3e}
+.rec-thumb{width:60px;height:60px;object-fit:cover;border-radius:6px;margin-top:6px;cursor:pointer}
+.del-btn{margin-top:8px;background:none;border:1px solid #e53e3e;color:#e53e3e;border-radius:6px;padding:5px 12px;font-size:12px;cursor:pointer;touch-action:manipulation}
+.lbl-opt{font-weight:normal;color:#718096;font-size:12px}
+.mandatory{color:#fbbf24;font-size:12px}
+
+/* באנר התקנת PWA */
+#install-banner{display:none;background:#1e3a5f;color:white;padding:12px 16px;text-align:center;font-size:13px;position:relative}
+#install-banner button{background:#0e9f6e;color:white;border:none;border-radius:6px;padding:7px 16px;font-size:13px;font-weight:bold;cursor:pointer;margin-right:10px;touch-action:manipulation}
+#install-banner .close-btn{position:absolute;top:8px;left:12px;background:none;border:none;color:rgba(255,255,255,.6);font-size:18px;cursor:pointer;line-height:1}
+
+/* שורת סטטוס אחסון */
+#storage-info{font-size:11px;color:#718096;text-align:center;padding:4px;display:none}
+</style>
+</head>
+<body>
+
+<!-- באנר התקנה -->
+<div id="install-banner">
+  <button id="btn-install">📲 התקן כאפליקציה</button>
+  <span>לשמירת נתונים מלאה והפעלה ללא אינטרנט</span>
+  <button class="close-btn" id="btn-close-banner">✕</button>
+</div>
+
+<header>
+  💧 מאגר מז"ח ומד מים
+  <span>הרי נצרת מפעלי מים וביוב בע"מ</span>
+</header>
+
+<div id="storage-info"></div>
+
+<nav>
+  <button class="active" id="nb-reg">📝 רישום</button>
+  <button id="nb-list">📋 רשימה</button>
+  <button id="nb-stats">📊 סטטיסטיקה</button>
+</nav>
+
+<input type="file" id="fi-mz" accept="image/*" capture="environment">
+<input type="file" id="fi-mt" accept="image/*" capture="environment">
+
+<!-- REGISTRATION -->
+<div class="page active" id="page-reg">
+  <div class="steps">
+    <div class="step active" id="s1"></div>
+    <div class="step" id="s2"></div>
+    <div class="step" id="s3"></div>
+  </div>
+
+  <div class="card">
+    <h3>🔧 שלב 1 — מז"ח (מד זרם חוזר)</h3>
+    <div class="cam-box">
+      <div style="font-weight:bold;font-size:15px;">📸 צלם את המז"ח</div>
+      <p>צלם את לוחית הזיהוי של המז"ח</p>
+      <button class="btn btn-green" id="btn-cam-mz">📷 פתח מצלמה</button>
+      <img id="prev-mz" class="preview-img" alt="">
+    </div>
+    <label>מספר מז"ח *</label>
+    <input type="text" id="mz-id" placeholder='הכנס מספר מז"ח...'>
+    <label>קוטר מז"ח *</label>
+    <div class="size-grid">
+      <div class="size-btn" id="sz-2">2"</div>
+      <div class="size-btn" id="sz-3">3"</div>
+      <div class="size-btn" id="sz-4">4"</div>
+      <div class="size-btn" id="sz-6">6"</div>
+      <div class="size-btn" id="sz-8">8"</div>
+    </div>
+    <input type="hidden" id="mz-size">
+    <label>בדיקת כיול בתוקף? *</label>
+    <div class="radio-group">
+      <div class="radio-btn" id="cb-yes">✅ כן — יש מדבקה</div>
+      <div class="radio-btn" id="cb-no">❌ לא</div>
+    </div>
+    <input type="hidden" id="calib-val">
+    <div id="calib-wrap" style="display:none;">
+      <label>תאריך הבדיקה שבוצעה *</label>
+      <input type="text" id="calib-check-date" placeholder="לדוגמה: 15/02/2025">
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>💧 שלב 2 — מד מים</h3>
+    <div class="cam-box green">
+      <div style="font-weight:bold;font-size:15px;">📸 צלם מד מים <span class="mandatory">(חובה)</span></div>
+      <p>צלם את המד — Claude ינסה לזהות את המספר/QR אוטומטית</p>
+      <button class="btn btn-blue" id="btn-cam-mt">📷 צלם מד מים</button>
+      <img id="prev-mt" class="preview-img" alt="">
+      <div id="ai-status" class="status-bar"></div>
+    </div>
+    <label>מספר מד מים <span class="lbl-opt">(אופציונלי — יזוהה מהתמונה או הקלד ידנית)</span></label>
+    <input type="text" id="mt-id" placeholder="זוהה אוטומטית / הקלד ידנית...">
+    <div class="info-tip">Sonata: כגון <strong>70B3D5A9F01A9FB8</strong> | Octave: ליד S/N כגון <strong>231533817</strong></div>
+    <label>סוג מד מים</label>
+    <select id="mt-type">
+      <option value="">-- בחר סוג --</option>
+      <option>Sonata</option>
+      <option>Octave</option>
+      <option>אחר</option>
+    </select>
+  </div>
+
+  <div class="card">
+    <h3>📍 מיקום פיזי <span class="lbl-opt">(אופציונלי)</span></h3>
+    <button class="btn btn-green" id="btn-loc">📡 אתר מיקום GPS</button>
+    <div id="loc-display" class="loc-box" style="margin-top:10px;">לחץ "אתר מיקום" לקבלת קואורדינטות</div>
+    <input type="hidden" id="loc-lat">
+    <input type="hidden" id="loc-lng">
+    <input type="hidden" id="loc-acc">
+    <label>הערות / כתובת</label>
+    <textarea id="notes" placeholder="כתובת, תיאור מיקום, הערות..."></textarea>
+  </div>
+
+  <button class="btn btn-save" id="btn-save">💾 שמור רשומה</button>
+</div>
+
+<!-- LIST -->
+<div class="page" id="page-list">
+  <div class="search-bar">
+    <input type="text" id="search-inp" placeholder='חפש לפי מז"ח / מד מים...'>
+    <button onclick="renderList()" style="background:#1a56db;color:white;border:none;border-radius:8px;padding:0 14px;font-size:14px;cursor:pointer;touch-action:manipulation;">🔍</button>
+  </div>
+  <button class="btn btn-gray" onclick="exportCSV()" style="margin-bottom:12px;">📤 ייצא לקובץ CSV</button>
+  <div id="list-container"></div>
+</div>
+
+<!-- STATS -->
+<div class="page" id="page-stats">
+  <div class="stats-row">
+    <div class="stat-box"><div class="num" id="st-total">0</div><div class="lbl">סה"כ</div></div>
+    <div class="stat-box green"><div class="num" id="st-ok">0</div><div class="lbl">כיול תקין</div></div>
+    <div class="stat-box red"><div class="num" id="st-nok">0</div><div class="lbl">ללא כיול</div></div>
+  </div>
+  <div class="card">
+    <h3>📊 לפי קוטר מז"ח</h3>
+    <div id="size-stats"><div style="color:#a0aec0;font-size:13px;">אין נתונים</div></div>
+  </div>
+  <div class="card">
+    <h3>🗓️ לפי תאריך</h3>
+    <div id="date-stats"><div style="color:#a0aec0;font-size:13px;">אין נתונים</div></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ============================================================
+// SERVICE WORKER
+// ============================================================
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js').catch(function(){});
+}
+
+// ============================================================
+// PERSISTENT STORAGE — בקש מהדפדפן לא למחוק את הנתונים
+// ============================================================
+async function requestPersistence() {
+  if (navigator.storage && navigator.storage.persist) {
+    const granted = await navigator.storage.persist();
+    const info = document.getElementById('storage-info');
+    if (granted) {
+      info.style.display = 'block';
+      info.textContent = '🔒 אחסון מוגן — נתונים לא יימחקו אוטומטית';
+      info.style.color = '#065f46';
+    }
+    // בדוק נפח
+    if (navigator.storage.estimate) {
+      const est = await navigator.storage.estimate();
+      const usedMB = (est.usage / 1024 / 1024).toFixed(1);
+      const quotaMB = (est.quota / 1024 / 1024).toFixed(0);
+      info.style.display = 'block';
+      info.textContent += ' | נפח: ' + usedMB + 'MB / ' + quotaMB + 'MB';
+    }
+  }
+}
+
+// ============================================================
+// STORAGE — IndexedDB עם תמיכת Blob לתמונות
+// ============================================================
+var DB = (function() {
+  var mem = [], idb = null;
+  var DB_NAME = 'MazachDB', STORE = 'records', DB_VER = 2, LS_KEY = 'mazach_v3';
+
+  function openIDB(cb) {
+    if (!window.indexedDB) { cb(null); return; }
+    var req = window.indexedDB.open(DB_NAME, DB_VER);
+    req.onupgradeneeded = function(e) {
+      var db = e.target.result;
+      // מחק store ישן אם קיים (שדרוג מ-v1)
+      if (db.objectStoreNames.contains(STORE)) db.deleteObjectStore(STORE);
+      db.createObjectStore(STORE, { keyPath: 'id' });
+    };
+    req.onsuccess = function(e) { cb(e.target.result); };
+    req.onerror   = function()  { cb(null); };
+  }
+
+  function idbSave(db, records) {
+    try {
+      var tx = db.transaction(STORE, 'readwrite'), st = tx.objectStore(STORE);
+      st.clear();
+      records.forEach(function(r){ st.put(r); });
+    } catch(e){ console.error('idbSave error', e); }
+  }
+
+  function idbLoad(db, cb) {
+    try {
+      var req = db.transaction(STORE,'readonly').objectStore(STORE).getAll();
+      req.onsuccess = function(e){ cb((e.target.result||[]).sort(function(a,b){return b.id-a.id;})); };
+      req.onerror = function(){ cb([]); };
+    } catch(e){ cb([]); }
+  }
+
+  // שמור ב-localStorage ללא תמונות (לגיבוי מטה-דאטה)
+  function lsSave(records) {
+    try {
+      var slim = records.map(function(r) {
+        var c = Object.assign({}, r);
+        delete c.mzImg; delete c.mtImg;
+        return c;
+      });
+      localStorage.setItem(LS_KEY, JSON.stringify(slim));
+    } catch(e){}
+  }
+
+  function lsLoad(){ try{ var s=localStorage.getItem(LS_KEY); return s?JSON.parse(s):[]; }catch(e){ return []; } }
+
+  function saveAll(){ lsSave(mem); if(idb) idbSave(idb,mem); }
+
+  return {
+    init: function(cb){
+      openIDB(function(db){
+        idb = db;
+        if(db){
+          idbLoad(db, function(rows){
+            if(rows.length > 0){ mem = rows; if(cb)cb(); }
+            else {
+              // נסה לטעון מ-localStorage (ללא תמונות)
+              var ls = lsLoad();
+              mem = ls;
+              if(cb)cb();
+            }
+          });
+        } else {
+          mem = lsLoad();
+          if(cb)cb();
+        }
+      });
+    },
+    getAll: function(){ return mem; },
+    add:    function(r){ mem.unshift(r); saveAll(); },
+    remove: function(id){ mem=mem.filter(function(r){return r.id!==id;}); saveAll(); }
+  };
+})();
+
+// ============================================================
+// PWA INSTALL
+// ============================================================
+var deferredPrompt = null;
+window.addEventListener('beforeinstallprompt', function(e) {
+  e.preventDefault();
+  deferredPrompt = e;
+  document.getElementById('install-banner').style.display = 'block';
+});
+window.addEventListener('appinstalled', function() {
+  document.getElementById('install-banner').style.display = 'none';
+  toast('✅ האפליקציה הותקנה בהצלחה!');
+});
+
+// ============================================================
+// WIRE UP EVENTS
+// ============================================================
+document.addEventListener('DOMContentLoaded', function() {
+
+  // Nav
+  document.getElementById('nb-reg').addEventListener('click', function(){ showPage('reg',this); });
+  document.getElementById('nb-list').addEventListener('click', function(){ showPage('list',this); });
+  document.getElementById('nb-stats').addEventListener('click', function(){ showPage('stats',this); });
+
+  // Install banner
+  document.getElementById('btn-install').addEventListener('click', function(){
+    if(!deferredPrompt) return;
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then(function(){ deferredPrompt = null; });
+  });
+  document.getElementById('btn-close-banner').addEventListener('click', function(){
+    document.getElementById('install-banner').style.display = 'none';
+  });
+
+  // Camera
+  document.getElementById('btn-cam-mz').addEventListener('click', function(){
+    var fi = document.getElementById('fi-mz'); fi.value=''; fi.click();
+  });
+  document.getElementById('btn-cam-mt').addEventListener('click', function(){
+    var fi = document.getElementById('fi-mt'); fi.value=''; fi.click();
+  });
+
+  // File inputs
+  document.getElementById('fi-mz').addEventListener('change', function(){
+    if(!this.files||!this.files[0]) return;
+    showPreview(this.files[0], 'prev-mz');
+  });
+  document.getElementById('fi-mt').addEventListener('change', function(){
+    if(!this.files||!this.files[0]) return;
+    var file = this.files[0];
+    showPreview(file, 'prev-mt', function(){ updateSteps(); });
+    identifyWithAI(file);
+  });
+
+  // Size buttons
+  document.querySelectorAll('.size-btn').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      document.querySelectorAll('.size-btn').forEach(function(b){ b.classList.remove('selected'); });
+      this.classList.add('selected');
+      document.getElementById('mz-size').value = this.textContent.trim();
+      updateSteps();
+    });
+  });
+
+  // Calib
+  document.getElementById('cb-yes').addEventListener('click', function(){ setCalib('yes'); });
+  document.getElementById('cb-no').addEventListener('click',  function(){ setCalib('no'); });
+
+  // Text inputs
+  document.getElementById('mz-id').addEventListener('input', updateSteps);
+  document.getElementById('mt-id').addEventListener('input', updateSteps);
+
+  // Location
+  document.getElementById('btn-loc').addEventListener('click', getLocation);
+
+  // Save
+  document.getElementById('btn-save').addEventListener('click', saveRecord);
+
+  // Search
+  document.getElementById('search-inp').addEventListener('input', renderList);
+
+  // Init DB + request persistence
+  DB.init(function(){ updateSteps(); });
+  requestPersistence();
+});
+
+// ============================================================
+// NAV
+// ============================================================
+function showPage(name, btn) {
+  document.querySelectorAll('.page').forEach(function(p){ p.classList.remove('active'); });
+  document.querySelectorAll('nav button').forEach(function(b){ b.classList.remove('active'); });
+  document.getElementById('page-'+name).classList.add('active');
+  if(btn) btn.classList.add('active');
+  if(name==='list')  renderList();
+  if(name==='stats') renderStats();
+}
+
+// ============================================================
+// STEPS
+// ============================================================
+function updateSteps() {
+  var mzid = document.getElementById('mz-id').value.trim();
+  var sz   = document.getElementById('mz-size').value;
+  var cal  = document.getElementById('calib-val').value;
+  var mt   = document.getElementById('prev-mt');
+  var hasPhoto = mt && mt.style.display !== 'none' && mt.src && mt.src.indexOf('data:') === 0;
+  document.getElementById('s1').className = 'step'+(mzid&&sz&&cal?' done':' active');
+  document.getElementById('s2').className = 'step'+(!mzid||!sz||!cal?'':(hasPhoto?' done':' active'));
+  document.getElementById('s3').className = 'step'+(hasPhoto?' done':'');
+}
+
+// ============================================================
+// CALIB
+// ============================================================
+function setCalib(val) {
+  document.getElementById('calib-val').value = val;
+  document.getElementById('cb-yes').className = 'radio-btn'+(val==='yes'?' sel-yes':'');
+  document.getElementById('cb-no').className  = 'radio-btn'+(val==='no'?' sel-no':'');
+  document.getElementById('calib-wrap').style.display = val==='yes'?'block':'none';
+  updateSteps();
+}
+
+// ============================================================
+// PHOTO — דחוס לפני שמירה
+// ============================================================
+function compressImage(file, cb) {
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var img = new Image();
+    img.onload = function() {
+      var canvas = document.createElement('canvas');
+      var MAX = 1200;
+      var w = img.width, h = img.height;
+      if (w > MAX || h > MAX) {
+        if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
+        else       { w = Math.round(w * MAX / h); h = MAX; }
+      }
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      cb(canvas.toDataURL('image/jpeg', 0.75));
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function showPreview(file, imgId, cb) {
+  compressImage(file, function(dataUrl) {
+    var img = document.getElementById(imgId);
+    img.src = dataUrl;
+    img.style.display = 'block';
+    if(cb) cb();
+  });
+}
+
+// ============================================================
+// AI IDENTIFICATION
+// ============================================================
+function setStatus(state, msg) {
+  var bar = document.getElementById('ai-status');
+  bar.className = 'status-bar ' + (state==='scan'?'s-scan':state==='ok'?'s-ok':'s-err');
+  bar.textContent = msg;
+}
+
+function identifyWithAI(file) {
+  setStatus('scan', '🤖 Claude מנתח את התמונה...');
+  compressImage(file, function(dataUrl) {
+    var parts = dataUrl.split(',');
+    var mediaType = parts[0].replace('data:','').replace(';base64','');
+    var b64 = parts[1];
+    var prompt = 'This is a water meter image (ARAD brand, Sonata or Octave).'+
+      ' Find the meter serial number.'+
+      ' For Sonata: a long hex string like 70B3D5A9F01A9FB8.'+
+      ' For Octave: digits next to S/N label.'+
+      ' If there is a QR code, decode it.'+
+      ' Return ONLY the serial number string, nothing else.'+
+      ' If not found, return NOT_FOUND.';
+    fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:100,
+        messages:[{role:'user',content:[
+          {type:'image',source:{type:'base64',media_type:mediaType,data:b64}},
+          {type:'text',text:prompt}
+        ]}]
+      })
+    })
+    .then(function(r){return r.json();})
+    .then(function(data){
+      if(data.error){ setStatus('err','⚠️ '+data.error.message+' — הקלד ידנית'); return; }
+      var txt = '';
+      (data.content||[]).forEach(function(c){if(c.type==='text') txt+=c.text;});
+      txt = txt.trim();
+      if(!txt||txt==='NOT_FOUND'||txt.length<4){
+        setStatus('err','⚠️ לא זוהה מספר — הקלד ידנית');
+      } else {
+        document.getElementById('mt-id').value = txt;
+        setStatus('ok','✅ זוהה: '+txt+' — ניתן לתקן');
+        updateSteps();
+        if(navigator.vibrate) navigator.vibrate([80,40,80]);
+        toast('✅ מספר מד זוהה!');
+      }
+    })
+    .catch(function(){ setStatus('err','⚠️ שגיאת חיבור — הקלד ידנית'); });
+  });
+}
+
+// ============================================================
+// LOCATION
+// ============================================================
+function getLocation() {
+  var box = document.getElementById('loc-display');
+  box.className = 'loc-box'; box.textContent = '📡 מאתר מיקום...';
+  if(!navigator.geolocation){ box.className='loc-box loc-err'; box.textContent='GPS לא נתמך'; return; }
+  navigator.geolocation.getCurrentPosition(function(pos){
+    var lat=pos.coords.latitude.toFixed(6), lng=pos.coords.longitude.toFixed(6), acc=Math.round(pos.coords.accuracy);
+    document.getElementById('loc-lat').value=lat;
+    document.getElementById('loc-lng').value=lng;
+    document.getElementById('loc-acc').value=acc;
+    box.className='loc-box loc-ok';
+    box.innerHTML='📍 '+lat+', '+lng+' (±'+acc+'m)<br><a href="https://maps.google.com/?q='+lat+','+lng+'" target="_blank" style="color:#065f46;font-size:12px;">🗺️ מפה</a>';
+  },function(err){
+    box.className='loc-box loc-err';
+    box.textContent=err.code===1?'❌ הרשאת GPS נדחתה':'❌ לא ניתן לאתר';
+  },{enableHighAccuracy:true,timeout:15000});
+}
+
+// ============================================================
+// SAVE
+// ============================================================
+function saveRecord() {
+  var mzid  = document.getElementById('mz-id').value.trim();
+  var mzsz  = document.getElementById('mz-size').value;
+  var calib = document.getElementById('calib-val').value;
+  var cdchk = document.getElementById('calib-check-date').value.trim();
+  var mtid  = document.getElementById('mt-id').value.trim();
+  var mttyp = document.getElementById('mt-type').value;
+  var lat   = document.getElementById('loc-lat').value;
+  var lng   = document.getElementById('loc-lng').value;
+  var acc   = document.getElementById('loc-acc').value;
+  var notes = document.getElementById('notes').value.trim();
+  var mzEl  = document.getElementById('prev-mz');
+  var mtEl  = document.getElementById('prev-mt');
+  var mzImg = (mzEl.style.display!=='none'&&mzEl.src.indexOf('data:')===0)?mzEl.src:'';
+  var mtImg = (mtEl.style.display!=='none'&&mtEl.src.indexOf('data:')===0)?mtEl.src:'';
+
+  if(!mzid)  { toast('⚠️ יש להזין מספר מז"ח'); return; }
+  if(!mzsz)  { toast('⚠️ יש לבחור קוטר מז"ח'); return; }
+  if(!calib) { toast('⚠️ יש לסמן אם יש כיול בתוקף'); return; }
+  if(calib==='yes'&&!cdchk){ toast('⚠️ יש להזין תאריך הבדיקה'); return; }
+  if(!mtImg) { toast('⚠️ יש לצלם תמונה של מד המים'); return; }
+
+  DB.add({
+    id:Date.now(), mzid:mzid, mzsz:mzsz,
+    calib:calib, calibCheckDate:cdchk,
+    mtid:mtid, mttyp:mttyp,
+    lat:lat, lng:lng, acc:acc,
+    notes:notes, mzImg:mzImg, mtImg:mtImg,
+    ts:new Date().toLocaleString('he-IL')
+  });
+
+  toast('✅ נשמר! סה"כ: '+DB.getAll().length);
+  // עדכן הצגת נפח
+  requestPersistence();
+  resetForm();
+}
+
+// ============================================================
+// RESET
+// ============================================================
+function resetForm() {
+  ['mz-id','calib-check-date','mt-id','notes','loc-lat','loc-lng','loc-acc','calib-val','mz-size']
+    .forEach(function(id){ var el=document.getElementById(id); if(el) el.value=''; });
+  document.getElementById('mt-type').value='';
+  document.getElementById('calib-wrap').style.display='none';
+  document.getElementById('cb-yes').className='radio-btn';
+  document.getElementById('cb-no').className='radio-btn';
+  document.querySelectorAll('.size-btn').forEach(function(b){ b.classList.remove('selected'); });
+  ['prev-mz','prev-mt'].forEach(function(id){
+    var el=document.getElementById(id); el.src=''; el.style.display='none';
+  });
+  document.getElementById('fi-mz').value='';
+  document.getElementById('fi-mt').value='';
+  var bar=document.getElementById('ai-status'); bar.className='status-bar'; bar.textContent='';
+  var loc=document.getElementById('loc-display'); loc.className='loc-box'; loc.textContent='לחץ "אתר מיקום" לקבלת קואורדינטות';
+  window.scrollTo(0,0);
+  updateSteps();
+}
+
+// ============================================================
+// LIST
+// ============================================================
+function renderList() {
+  var q=(document.getElementById('search-inp').value||'').toLowerCase();
+  var all=DB.getAll();
+  var list=q?all.filter(function(r){ return r.mzid.toLowerCase().indexOf(q)>=0||(r.mtid&&r.mtid.toLowerCase().indexOf(q)>=0); }):all;
+  var cont=document.getElementById('list-container');
+  if(!list.length){
+    cont.innerHTML='<div class="empty"><div class="big">🔍</div><div>'+(q?'לא נמצאו תוצאות':'אין רשומות עדיין')+'</div></div>';
+    return;
+  }
+  cont.innerHTML=list.map(function(r){
+    return '<div class="rec-card '+(r.calib==='yes'?'ok':'nok')+'">'+
+      '<div class="rec-top"><div class="rec-id">🔧 '+esc(r.mzid)+'</div><div class="rec-date">'+esc(r.ts)+'</div></div>'+
+      '<div class="rec-detail">💧 מד מים: <strong>'+(r.mtid?esc(r.mtid):'<span style="color:#a0aec0">ללא מספר</span>')+'</strong>'+(r.mttyp?' ('+esc(r.mttyp)+')':'')+'</div>'+
+      '<div><span class="badge b-sz">'+esc(r.mzsz)+'</span>'+
+      (r.calib==='yes'?'<span class="badge b-ok">✅ נבדק: '+esc(r.calibCheckDate||'')+'</span>':'<span class="badge b-no">❌ ללא כיול</span>')+
+      (r.lat?'<span class="badge b-loc">📍 '+parseFloat(r.lat).toFixed(4)+','+parseFloat(r.lng).toFixed(4)+'</span>':'')+
+      '</div>'+(r.notes?'<div class="rec-detail" style="margin-top:5px;">💬 '+esc(r.notes)+'</div>':'')+
+      '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;margin-top:8px;">'+(r.mzImg?'<img class="rec-thumb" src="'+r.mzImg+'" alt="מז״ח">':'')+(r.mtImg?'<img class="rec-thumb" src="'+r.mtImg+'" alt="מד מים">':'')+(r.lat?'<a href="https://maps.google.com/?q='+r.lat+','+r.lng+'" target="_blank" style="font-size:12px;color:#805ad5;">🗺️</a>':'')+'</div>'+
+      '<button class="del-btn" data-id="'+r.id+'">🗑️ מחק</button></div>';
+  }).join('');
+  cont.querySelectorAll('.del-btn').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      if(!confirm('למחוק?')) return;
+      DB.remove(parseInt(this.dataset.id));
+      renderList();
+      toast('🗑️ נמחק');
+    });
+  });
+  cont.querySelectorAll('.rec-thumb').forEach(function(img){
+    img.addEventListener('click', function(){ zoom(this); });
+  });
+}
+
+function zoom(img) {
+  var ov=document.createElement('div');
+  ov.style.cssText='position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.92);z-index:9999;display:flex;align-items:center;justify-content:center;cursor:pointer;';
+  var i=document.createElement('img');
+  i.src=img.src; i.style.cssText='max-width:95%;max-height:92%;border-radius:8px;';
+  ov.appendChild(i); ov.onclick=function(){document.body.removeChild(ov);}; document.body.appendChild(ov);
+}
+
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+// ============================================================
+// STATS
+// ============================================================
+function renderStats(){
+  var all=DB.getAll();
+  document.getElementById('st-total').textContent=all.length;
+  document.getElementById('st-ok').textContent=all.filter(function(r){return r.calib==='yes';}).length;
+  document.getElementById('st-nok').textContent=all.filter(function(r){return r.calib==='no';}).length;
+  var sz={};
+  all.forEach(function(r){sz[r.mzsz]=(sz[r.mzsz]||0)+1;});
+  document.getElementById('size-stats').innerHTML=Object.keys(sz).length
+    ?Object.keys(sz).sort(function(a,b){return sz[b]-sz[a];}).map(function(s){
+        return '<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #e2e8f0;font-size:14px;"><span>קוטר '+s+'</span><strong>'+sz[s]+'</strong></div>';
+      }).join('')
+    :'<div style="color:#a0aec0;font-size:13px;">אין נתונים</div>';
+  var dt={};
+  all.forEach(function(r){var d=r.ts.split(',')[0];dt[d]=(dt[d]||0)+1;});
+  document.getElementById('date-stats').innerHTML=Object.keys(dt).length
+    ?Object.keys(dt).slice(0,7).map(function(d){
+        return '<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #e2e8f0;font-size:14px;"><span>'+d+'</span><strong>'+dt[d]+'</strong></div>';
+      }).join('')
+    :'<div style="color:#a0aec0;font-size:13px;">אין נתונים</div>';
+}
+
+// ============================================================
+// EXPORT
+// ============================================================
+function exportCSV(){
+  var all=DB.getAll();
+  if(!all.length){toast('אין נתונים לייצוא');return;}
+  var h=['תאריך','מספר מז"ח','קוטר','כיול בתוקף','תאריך בדיקה','מספר מד מים','סוג מד','קו רוחב','קו אורך','דיוק GPS','הערות'];
+  var rows=all.map(function(r){return[r.ts,r.mzid,r.mzsz,r.calib==='yes'?'כן':'לא',r.calibCheckDate||'',r.mtid||'',r.mttyp||'',r.lat||'',r.lng||'',r.acc||'',r.notes||''];});
+  var csv='\uFEFF'+[h].concat(rows).map(function(row){return row.map(function(v){return '"'+String(v).replace(/"/g,'""')+'"';}).join(',');}).join('\n');
+  var a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
+  a.download='mazach_'+new Date().toISOString().slice(0,10)+'.csv';
+  a.click();
+  toast('📤 CSV הורד');
+}
+
+// ============================================================
+// TOAST
+// ============================================================
+function toast(msg){
+  var t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(function(){t.classList.remove('show');},3000);
+}
+</script>
+</body>
+</html>
