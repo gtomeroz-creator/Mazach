@@ -130,7 +130,14 @@ input[type=file]{position:absolute;left:-9999px;opacity:0;width:1px;height:1px}
   <div class="card">
     <h3>🏘️ שלב 0 — מיקום הרישום</h3>
     <label>שם ישוב *</label>
-    <input type="text" id="city-name" placeholder="לדוגמה: נצרת, יפיע, עילוט...">
+    <select id="city-name">
+      <option value="">-- בחר ישוב --</option>
+      <option>נצרת</option>
+      <option>ריינה</option>
+      <option>יפיע</option>
+      <option>עילוט</option>
+      <option>איכסאל</option>
+    </select>
     <label>שם המפעל / העסק *</label>
     <input type="text" id="facility-name" placeholder="לדוגמה: תחנת שאיבה, מגדל מים...">
   </div>
