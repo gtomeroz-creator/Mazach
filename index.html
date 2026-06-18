@@ -9,6 +9,7 @@
 <meta name="apple-mobile-web-app-title" content='מז"ח'>
 <link rel="manifest" href="manifest.json">
 <title>מאגר מז"ח ומד מים</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:Arial,sans-serif;background:#f0f4f8;color:#1a202c;min-height:100vh}
@@ -215,6 +216,7 @@ input[type=file]{position:absolute;left:-9999px;opacity:0;width:1px;height:1px}
     <button onclick="renderList()" style="background:#1a56db;color:white;border:none;border-radius:8px;padding:0 14px;font-size:14px;cursor:pointer;touch-action:manipulation;">🔍</button>
   </div>
   <button class="btn btn-gray" onclick="exportCSV()" style="margin-bottom:12px;">📤 ייצא לקובץ CSV</button>
+  <button class="btn btn-gray" onclick="exportZIP()" style="margin-bottom:12px;background:#1a56db;">🗜️ ייצא הכל (CSV + תמונות) ZIP</button>
   <div id="list-container"></div>
 </div>
 
@@ -775,6 +777,59 @@ function exportCSV(){
   a.download='mazach_'+new Date().toISOString().slice(0,10)+'.csv';
   a.click();
   toast('📤 CSV הורד');
+}
+
+function exportZIP(){
+  var all=DB.getAll();
+  if(!all.length){toast('אין נתונים לייצוא');return;}
+  if(typeof JSZip==='undefined'){toast('⚠️ שגיאה בטעינת מודול ZIP — בדוק חיבור אינטרנט');return;}
+
+  toast('⏳ מכין קובץ ZIP...');
+  var zip = new JSZip();
+  var imgFolder = zip.folder('תמונות');
+
+  // CSV
+  var h=['תאריך','ישוב','שם מפעל','מספר מז"ח','קוטר','כיול בתוקף','תאריך בדיקה','מספר מד מים','סוג מד','קו רוחב','קו אורך','דיוק GPS','הערות','קובץ תמונת מזח','קובץ תמונת מד'];
+  var rows=[];
+
+  all.forEach(function(r, idx){
+    var base = (r.city||'')+'_'+(r.mzid||idx).toString().replace(/[\/\\:*?"<>|]/g,'-');
+    var mzFile='', mtFile='';
+    if(r.mzImg){
+      mzFile = base+'_מזח.jpg';
+      imgFolder.file(mzFile, dataURLtoBlob(r.mzImg));
+    }
+    if(r.mtImg){
+      mtFile = base+'_מד.jpg';
+      imgFolder.file(mtFile, dataURLtoBlob(r.mtImg));
+    }
+    rows.push([r.ts,r.city||'',r.facility||'',r.mzid,r.mzsz,r.calib==='yes'?'כן':'לא',r.calibCheckDate||'',r.mtid||'',r.mttyp||'',r.lat||'',r.lng||'',r.acc||'',r.notes||'',mzFile,mtFile]);
+  });
+
+  var csv='\uFEFF'+[h].concat(rows).map(function(row){return row.map(function(v){return '"'+String(v).replace(/"/g,'""')+'"';}).join(',');}).join('\n');
+  zip.file('רשומות.csv', csv);
+
+  zip.generateAsync({type:'blob'}).then(function(blob){
+    var url = URL.createObjectURL(blob);
+    var a=document.createElement('a');
+    a.href=url;
+    a.download='mazach_'+new Date().toISOString().slice(0,10)+'.zip';
+    a.click();
+    setTimeout(function(){URL.revokeObjectURL(url);}, 5000);
+    toast('✅ ZIP הורד בהצלחה!');
+  }).catch(function(err){
+    toast('⚠️ שגיאה: '+err.message);
+  });
+}
+
+function dataURLtoBlob(dataUrl){
+  var parts = dataUrl.split(',');
+  var mime = parts[0].match(/:(.*?);/)[1];
+  var bstr = atob(parts[1]);
+  var n = bstr.length;
+  var u8 = new Uint8Array(n);
+  while(n--) u8[n] = bstr.charCodeAt(n);
+  return new Blob([u8], {type:mime});
 }
 
 // ============================================================
