@@ -1,5 +1,5 @@
 // Service Worker — מאגר מז"ח ומד מים
-const CACHE = 'mazach-v5';
+const CACHE = 'mazach-v6';
 const FILES = ['./index.html', './manifest.json'];
 
 self.addEventListener('install', e => {
