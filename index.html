@@ -90,6 +90,12 @@ input[type=file]{position:absolute;left:-9999px;opacity:0;width:1px;height:1px}
 /* שורת סטטוס אחסון */
 #storage-info{font-size:11px;color:#718096;text-align:center;padding:4px;display:none}
 
+/* מתג מצב רישום */
+.mode-switch{display:flex;gap:8px;margin-bottom:14px}
+.mode-btn{flex:1;padding:12px 6px;border:2px solid #cbd5e0;border-radius:10px;background:#fff;color:#4a5568;font-size:14px;font-weight:bold;cursor:pointer;text-align:center;font-family:Arial,sans-serif;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.mode-btn.active{border-color:#1a56db;background:#ebf4ff;color:#1a56db}
+.mode-btn.active.sp{border-color:#0e9f6e;background:#f0fdf4;color:#065f46}
+
 
 </style>
 </head>
@@ -117,9 +123,15 @@ input[type=file]{position:absolute;left:-9999px;opacity:0;width:1px;height:1px}
 
 <input type="file" id="fi-mz" accept="image/*" capture="environment">
 <input type="file" id="fi-mt" accept="image/*" capture="environment">
+<input type="file" id="fi-sp" accept="image/*" capture="environment">
 
 <!-- REGISTRATION -->
 <div class="page active" id="page-reg">
+  <div class="mode-switch">
+    <button class="mode-btn active" id="mode-btn-mz" type="button">🔧 מז"ח ומד מים</button>
+    <button class="mode-btn" id="mode-btn-sp" type="button">🚰 נקודת דיגום</button>
+  </div>
+
   <div class="steps">
     <div class="step active" id="s0"></div>
     <div class="step" id="s1"></div>
@@ -129,7 +141,7 @@ input[type=file]{position:absolute;left:-9999px;opacity:0;width:1px;height:1px}
 
   <!-- שלב 0 — ישוב ומפעל -->
   <div class="card">
-    <h3>🏘️ שלב 0 — מיקום הרישום</h3>
+    <h3 id="s0-title">🏘️ שלב 0 — מיקום הרישום</h3>
     <label>שם ישוב *</label>
     <select id="city-name">
       <option value="">-- בחר ישוב --</option>
@@ -141,8 +153,11 @@ input[type=file]{position:absolute;left:-9999px;opacity:0;width:1px;height:1px}
     </select>
     <label>שם המפעל / העסק *</label>
     <input type="text" id="facility-name" placeholder="לדוגמה: תחנת שאיבה, מגדל מים...">
+    <label id="s0-loc-label" style="display:none;">📍 נ.צ. — מיקום נקודת הדיגום <span class="lbl-opt">(אופציונלי)</span></label>
+    <div id="s0-loc-slot"></div>
   </div>
 
+  <div id="mode-mz">
   <div class="card">
     <h3>🔧 שלב 1 — מז"ח (מד זרם חוזר)</h3>
     <div class="cam-box">
@@ -194,16 +209,40 @@ input[type=file]{position:absolute;left:-9999px;opacity:0;width:1px;height:1px}
       <option>אחר</option>
     </select>
   </div>
+  </div>
 
-  <div class="card">
-    <h3>📍 מיקום פיזי <span class="lbl-opt">(אופציונלי)</span></h3>
-    <button class="btn btn-green" id="btn-loc">📡 אתר מיקום GPS</button>
-    <div id="loc-display" class="loc-box" style="margin-top:10px;">לחץ "אתר מיקום" לקבלת קואורדינטות</div>
-    <input type="hidden" id="loc-lat">
-    <input type="hidden" id="loc-lng">
-    <input type="hidden" id="loc-acc">
-    <label>הערות / כתובת</label>
-    <textarea id="notes" placeholder="כתובת, תיאור מיקום, הערות..."></textarea>
+  <!-- נקודת דיגום -->
+  <div id="mode-sp" style="display:none;">
+    <div class="card">
+      <h3>🚰 שלב 1 — נקודת דיגום</h3>
+      <div class="cam-box green">
+        <div style="font-weight:bold;font-size:15px;">📸 צלם את נקודת הדיגום <span class="mandatory">(חובה)</span></div>
+        <p>צלם את המקום שבו מותקנת (או אמורה להיות מותקנת) פיית הדיגום</p>
+        <button class="btn btn-blue" id="btn-cam-sp" type="button">📷 פתח מצלמה</button>
+        <img id="prev-sp" class="preview-img" alt="">
+      </div>
+      <label>האם מותקנת פיית דיגום? *</label>
+      <div class="radio-group">
+        <div class="radio-btn" id="sp-yes">✅ כן — מותקנת</div>
+        <div class="radio-btn" id="sp-no">❌ לא מותקנת</div>
+      </div>
+      <input type="hidden" id="sp-val">
+    </div>
+  </div>
+
+  <div class="card" id="card-loc-notes">
+    <h3 id="loc-notes-title">📍 מיקום פיזי <span class="lbl-opt">(אופציונלי)</span></h3>
+    <div id="loc-block">
+      <button class="btn btn-green" id="btn-loc">📡 אתר מיקום GPS</button>
+      <div id="loc-display" class="loc-box" style="margin-top:10px;">לחץ "אתר מיקום" לקבלת קואורדינטות</div>
+      <input type="hidden" id="loc-lat">
+      <input type="hidden" id="loc-lng">
+      <input type="hidden" id="loc-acc">
+    </div>
+    <div id="notes-block">
+      <label>הערות / כתובת</label>
+      <textarea id="notes" placeholder="כתובת, תיאור מיקום, הערות..."></textarea>
+    </div>
   </div>
 
   <button class="btn btn-save" id="btn-save">💾 שמור רשומה</button>
@@ -212,7 +251,7 @@ input[type=file]{position:absolute;left:-9999px;opacity:0;width:1px;height:1px}
 <!-- LIST -->
 <div class="page" id="page-list">
   <div class="search-bar">
-    <input type="text" id="search-inp" placeholder='חפש לפי מז"ח / מד מים...'>
+    <input type="text" id="search-inp" placeholder='חפש לפי מז"ח / מד מים / ישוב / מפעל...'>
     <button onclick="renderList()" style="background:#1a56db;color:white;border:none;border-radius:8px;padding:0 14px;font-size:14px;cursor:pointer;touch-action:manipulation;">🔍</button>
   </div>
   <button class="btn btn-gray" onclick="exportCSV()" style="margin-bottom:12px;">📤 ייצא לקובץ CSV</button>
@@ -223,9 +262,14 @@ input[type=file]{position:absolute;left:-9999px;opacity:0;width:1px;height:1px}
 <!-- STATS -->
 <div class="page" id="page-stats">
   <div class="stats-row">
-    <div class="stat-box"><div class="num" id="st-total">0</div><div class="lbl">סה"כ</div></div>
+    <div class="stat-box"><div class="num" id="st-total">0</div><div class="lbl">סה"כ מז"ח</div></div>
     <div class="stat-box green"><div class="num" id="st-ok">0</div><div class="lbl">כיול תקין</div></div>
     <div class="stat-box red"><div class="num" id="st-nok">0</div><div class="lbl">ללא כיול</div></div>
+  </div>
+  <div class="stats-row">
+    <div class="stat-box"><div class="num" id="st-sp-total">0</div><div class="lbl">נקודות דיגום</div></div>
+    <div class="stat-box green"><div class="num" id="st-sp-yes">0</div><div class="lbl">עם פיית דיגום</div></div>
+    <div class="stat-box red"><div class="num" id="st-sp-no">0</div><div class="lbl">ללא פיית דיגום</div></div>
   </div>
   <div class="card">
     <h3>📊 לפי קוטר מז"ח</h3>
@@ -254,18 +298,19 @@ async function requestPersistence() {
   if (navigator.storage && navigator.storage.persist) {
     const granted = await navigator.storage.persist();
     const info = document.getElementById('storage-info');
-    if (granted) {
-      info.style.display = 'block';
-      info.textContent = '🔒 אחסון מוגן — נתונים לא יימחקו אוטומטית';
-      info.style.color = '#065f46';
-    }
+    var parts = [];
+    if (granted) parts.push('🔒 אחסון מוגן — נתונים לא יימחקו אוטומטית');
     // בדוק נפח
     if (navigator.storage.estimate) {
       const est = await navigator.storage.estimate();
       const usedMB = (est.usage / 1024 / 1024).toFixed(1);
       const quotaMB = (est.quota / 1024 / 1024).toFixed(0);
+      parts.push('נפח: ' + usedMB + 'MB / ' + quotaMB + 'MB');
+    }
+    if (parts.length) {
       info.style.display = 'block';
-      info.textContent += ' | נפח: ' + usedMB + 'MB / ' + quotaMB + 'MB';
+      info.style.color = granted ? '#065f46' : '#718096';
+      info.textContent = parts.join(' | ');
     }
   }
 }
@@ -311,7 +356,7 @@ var DB = (function() {
     try {
       var slim = records.map(function(r) {
         var c = Object.assign({}, r);
-        delete c.mzImg; delete c.mtImg;
+        delete c.mzImg; delete c.mtImg; delete c.spImg;
         return c;
       });
       localStorage.setItem(LS_KEY, JSON.stringify(slim));
@@ -416,6 +461,21 @@ document.addEventListener('DOMContentLoaded', function() {
   document.getElementById('cb-yes').addEventListener('click', function(){ setCalib('yes'); });
   document.getElementById('cb-no').addEventListener('click',  function(){ setCalib('no'); });
 
+  // Mode switch
+  document.getElementById('mode-btn-mz').addEventListener('click', function(){ setMode('mz'); });
+  document.getElementById('mode-btn-sp').addEventListener('click', function(){ setMode('sp'); });
+
+  // Sampling point
+  document.getElementById('btn-cam-sp').addEventListener('click', function(){
+    var fi = document.getElementById('fi-sp'); fi.value=''; fi.click();
+  });
+  document.getElementById('fi-sp').addEventListener('change', function(){
+    if(!this.files||!this.files[0]) return;
+    showPreview(this.files[0], 'prev-sp', function(){ updateSteps(); });
+  });
+  document.getElementById('sp-yes').addEventListener('click', function(){ setTap('yes'); });
+  document.getElementById('sp-no').addEventListener('click',  function(){ setTap('no'); });
+
   // Text inputs
   document.getElementById('mz-id').addEventListener('input', updateSteps);
   document.getElementById('mt-id').addEventListener('input', updateSteps);
@@ -430,6 +490,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Search
   document.getElementById('search-inp').addEventListener('input', renderList);
+
+  // שחזר את מצב הרישום האחרון
+  var savedMode = 'mz';
+  try { savedMode = localStorage.getItem('mazach_mode') || 'mz'; } catch(e){}
+  setMode(savedMode);
 
   // Init DB + request persistence
   DB.init(function(){ updateSteps(); });
@@ -460,6 +525,17 @@ function updateSteps() {
   var mt   = document.getElementById('prev-mt');
   var hasPhoto = mt && mt.style.display !== 'none' && mt.src && mt.src.indexOf('data:') === 0;
   var step0done = city && fac;
+  var isSp = currentMode === 'sp';
+  document.getElementById('s2').style.display = isSp ? 'none' : '';
+  document.getElementById('s3').style.display = isSp ? 'none' : '';
+  if (isSp) {
+    var spEl = document.getElementById('prev-sp');
+    var hasSp = spEl && spEl.style.display !== 'none' && spEl.src && spEl.src.indexOf('data:') === 0;
+    var spStep1 = hasSp && document.getElementById('sp-val').value;
+    document.getElementById('s0').className = 'step'+(step0done?' done':' active');
+    document.getElementById('s1').className = 'step'+(!step0done?'':(spStep1?' done':' active'));
+    return;
+  }
   var step1done = mzid && sz && cal;
   document.getElementById('s0').className = 'step'+(step0done?' done':' active');
   document.getElementById('s1').className = 'step'+(!step0done?'':(step1done?' done':' active'));
@@ -475,6 +551,45 @@ function setCalib(val) {
   document.getElementById('cb-yes').className = 'radio-btn'+(val==='yes'?' sel-yes':'');
   document.getElementById('cb-no').className  = 'radio-btn'+(val==='no'?' sel-no':'');
   document.getElementById('calib-wrap').style.display = val==='yes'?'block':'none';
+  updateSteps();
+}
+
+// ============================================================
+// MODE — מז"ח ומד מים / נקודת דיגום
+// ============================================================
+var currentMode = 'mz';
+
+function isSample(r) { return !!r && r.type === 'sample'; }
+
+function setMode(mode) {
+  currentMode = (mode === 'sp') ? 'sp' : 'mz';
+  try { localStorage.setItem('mazach_mode', currentMode); } catch(e){}
+  var sp = currentMode === 'sp';
+  document.getElementById('mode-btn-mz').className = 'mode-btn' + (sp ? '' : ' active');
+  document.getElementById('mode-btn-sp').className = 'mode-btn' + (sp ? ' active sp' : '');
+  document.getElementById('mode-mz').style.display = sp ? 'none' : 'block';
+  document.getElementById('mode-sp').style.display = sp ? 'block' : 'none';
+
+  // בנקודת דיגום ה-GPS עובר לשלב 0; במז"ח הוא חוזר לכרטיס המיקום
+  var block = document.getElementById('loc-block');
+  if (sp) {
+    document.getElementById('s0-loc-slot').appendChild(block);
+    document.getElementById('s0-loc-label').style.display = 'block';
+    document.getElementById('s0-title').textContent = '🏘️ שלב 0 — ישוב, מפעל ומיקום';
+    document.getElementById('loc-notes-title').textContent = '💬 הערות';
+  } else {
+    document.getElementById('card-loc-notes').insertBefore(block, document.getElementById('notes-block'));
+    document.getElementById('s0-loc-label').style.display = 'none';
+    document.getElementById('s0-title').textContent = '🏘️ שלב 0 — מיקום הרישום';
+    document.getElementById('loc-notes-title').innerHTML = '📍 מיקום פיזי <span class="lbl-opt">(אופציונלי)</span>';
+  }
+  updateSteps();
+}
+
+function setTap(val) {
+  document.getElementById('sp-val').value = val;
+  document.getElementById('sp-yes').className = 'radio-btn'+(val==='yes'?' sel-yes':'');
+  document.getElementById('sp-no').className  = 'radio-btn'+(val==='no'?' sel-no':'');
   updateSteps();
 }
 
@@ -625,7 +740,37 @@ function getLocation() {
 // ============================================================
 // SAVE
 // ============================================================
+function saveSampleRecord() {
+  var city = document.getElementById('city-name').value.trim();
+  var fac  = document.getElementById('facility-name').value.trim();
+  var tap  = document.getElementById('sp-val').value;
+  var lat  = document.getElementById('loc-lat').value;
+  var lng  = document.getElementById('loc-lng').value;
+  var acc  = document.getElementById('loc-acc').value;
+  var notes = document.getElementById('notes').value.trim();
+  var spEl = document.getElementById('prev-sp');
+  var spImg = (spEl.style.display!=='none'&&spEl.src.indexOf('data:')===0)?spEl.src:'';
+
+  if(!city)  { toast('⚠️ יש לבחור ישוב'); return; }
+  if(!fac)   { toast('⚠️ יש להזין שם מפעל'); return; }
+  if(!spImg) { toast('⚠️ יש לצלם תמונה של נקודת הדיגום'); return; }
+  if(!tap)   { toast('⚠️ יש לסמן אם מותקנת פיית דיגום'); return; }
+
+  DB.add({
+    id:Date.now(), type:'sample', city:city, facility:fac,
+    sampleTap:tap, spImg:spImg,
+    lat:lat, lng:lng, acc:acc,
+    notes:notes,
+    ts:new Date().toLocaleString('he-IL')
+  });
+
+  toast('✅ נקודת דיגום נשמרה! סה"כ: '+DB.getAll().length);
+  requestPersistence();
+  resetForm();
+}
+
 function saveRecord() {
+  if (currentMode === 'sp') { saveSampleRecord(); return; }
   var city  = document.getElementById('city-name').value.trim();
   var mzid  = document.getElementById('mz-id').value.trim();
   var mzsz  = document.getElementById('mz-size').value;
@@ -670,18 +815,21 @@ function saveRecord() {
 // RESET
 // ============================================================
 function resetForm() {
-  ['city-name','facility-name','mz-id','calib-check-date','mt-id','notes','loc-lat','loc-lng','loc-acc','calib-val','mz-size']
+  ['city-name','facility-name','mz-id','calib-check-date','mt-id','notes','loc-lat','loc-lng','loc-acc','calib-val','mz-size','sp-val']
     .forEach(function(id){ var el=document.getElementById(id); if(el) el.value=''; });
   document.getElementById('mt-type').value='';
   document.getElementById('calib-wrap').style.display='none';
   document.getElementById('cb-yes').className='radio-btn';
   document.getElementById('cb-no').className='radio-btn';
   document.querySelectorAll('.size-btn').forEach(function(b){ b.classList.remove('selected'); });
-  ['prev-mz','prev-mt'].forEach(function(id){
+  ['prev-mz','prev-mt','prev-sp'].forEach(function(id){
     var el=document.getElementById(id); el.src=''; el.style.display='none';
   });
   document.getElementById('fi-mz').value='';
   document.getElementById('fi-mt').value='';
+  document.getElementById('fi-sp').value='';
+  document.getElementById('sp-yes').className='radio-btn';
+  document.getElementById('sp-no').className='radio-btn';
   var bar=document.getElementById('ai-status'); bar.className='status-bar'; bar.textContent='';
   var loc=document.getElementById('loc-display'); loc.className='loc-box'; loc.textContent='לחץ "אתר מיקום" לקבלת קואורדינטות';
   window.scrollTo(0,0);
@@ -694,13 +842,16 @@ function resetForm() {
 function renderList() {
   var q=(document.getElementById('search-inp').value||'').toLowerCase();
   var all=DB.getAll();
-  var list=q?all.filter(function(r){ return r.mzid.toLowerCase().indexOf(q)>=0||(r.mtid&&r.mtid.toLowerCase().indexOf(q)>=0); }):all;
+  var list=q?all.filter(function(r){
+    return [r.mzid,r.mtid,r.city,r.facility].some(function(v){ return v && String(v).toLowerCase().indexOf(q)>=0; });
+  }):all;
   var cont=document.getElementById('list-container');
   if(!list.length){
     cont.innerHTML='<div class="empty"><div class="big">🔍</div><div>'+(q?'לא נמצאו תוצאות':'אין רשומות עדיין')+'</div></div>';
     return;
   }
   cont.innerHTML=list.map(function(r){
+    if(isSample(r)) return sampleCardHTML(r);
     return '<div class="rec-card '+(r.calib==='yes'?'ok':'nok')+'">'+
       '<div class="rec-top"><div class="rec-id">🔧 '+esc(r.mzid)+'</div><div class="rec-date">'+esc(r.ts)+'</div></div>'+
       '<div class="rec-detail">'+
@@ -729,6 +880,27 @@ function renderList() {
   });
 }
 
+function sampleCardHTML(r) {
+  var yes = r.sampleTap === 'yes';
+  return '<div class="rec-card '+(yes?'ok':'nok')+'">'+
+    '<div class="rec-top"><div class="rec-id">🚰 נקודת דיגום</div><div class="rec-date">'+esc(r.ts)+'</div></div>'+
+    '<div class="rec-detail">'+
+      (r.city?'🏘️ <strong>'+esc(r.city)+'</strong>':'')+
+      (r.city&&r.facility?' &nbsp;|&nbsp; ':'')+
+      (r.facility?'🏭 '+esc(r.facility):'')+
+    '</div>'+
+    '<div>'+
+      (yes?'<span class="badge b-ok">✅ מותקנת פיית דיגום</span>':'<span class="badge b-no">❌ אין פיית דיגום</span>')+
+      (r.lat?'<span class="badge b-loc">📍 '+parseFloat(r.lat).toFixed(4)+','+parseFloat(r.lng).toFixed(4)+'</span>':'')+
+    '</div>'+
+    (r.notes?'<div class="rec-detail" style="margin-top:5px;">💬 '+esc(r.notes)+'</div>':'')+
+    '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;margin-top:8px;">'+
+      (r.spImg?'<img class="rec-thumb" src="'+r.spImg+'" alt="נקודת דיגום">':'')+
+      (r.lat?'<a href="https://maps.google.com/?q='+r.lat+','+r.lng+'" target="_blank" style="font-size:12px;color:#805ad5;">🗺️</a>':'')+
+    '</div>'+
+    '<button class="del-btn" data-id="'+r.id+'">🗑️ מחק</button></div>';
+}
+
 function zoom(img) {
   var ov=document.createElement('div');
   ov.style.cssText='position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.92);z-index:9999;display:flex;align-items:center;justify-content:center;cursor:pointer;';
@@ -744,11 +916,16 @@ function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').repl
 // ============================================================
 function renderStats(){
   var all=DB.getAll();
-  document.getElementById('st-total').textContent=all.length;
-  document.getElementById('st-ok').textContent=all.filter(function(r){return r.calib==='yes';}).length;
-  document.getElementById('st-nok').textContent=all.filter(function(r){return r.calib==='no';}).length;
+  var mz=all.filter(function(r){return !isSample(r);});
+  var sp=all.filter(isSample);
+  document.getElementById('st-total').textContent=mz.length;
+  document.getElementById('st-ok').textContent=mz.filter(function(r){return r.calib==='yes';}).length;
+  document.getElementById('st-nok').textContent=mz.filter(function(r){return r.calib==='no';}).length;
+  document.getElementById('st-sp-total').textContent=sp.length;
+  document.getElementById('st-sp-yes').textContent=sp.filter(function(r){return r.sampleTap==='yes';}).length;
+  document.getElementById('st-sp-no').textContent=sp.filter(function(r){return r.sampleTap==='no';}).length;
   var sz={};
-  all.forEach(function(r){sz[r.mzsz]=(sz[r.mzsz]||0)+1;});
+  mz.forEach(function(r){sz[r.mzsz]=(sz[r.mzsz]||0)+1;});
   document.getElementById('size-stats').innerHTML=Object.keys(sz).length
     ?Object.keys(sz).sort(function(a,b){return sz[b]-sz[a];}).map(function(s){
         return '<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #e2e8f0;font-size:14px;"><span>קוטר '+s+'</span><strong>'+sz[s]+'</strong></div>';
@@ -766,11 +943,23 @@ function renderStats(){
 // ============================================================
 // EXPORT
 // ============================================================
+var CSV_HEAD = ['תאריך','ישוב','שם מפעל','מספר מז"ח','קוטר','כיול בתוקף','תאריך בדיקה','מספר מד מים','סוג מד','קו רוחב','קו אורך','דיוק GPS','הערות'];
+
+function recBase(r){
+  var s = isSample(r);
+  return [r.ts, r.city||'', r.facility||'', r.mzid||'', r.mzsz||'', s?'':(r.calib==='yes'?'כן':'לא'),
+          r.calibCheckDate||'', r.mtid||'', r.mttyp||'', r.lat||'', r.lng||'', r.acc||'', r.notes||''];
+}
+
+function recSample(r){
+  return isSample(r) ? ['נקודת דיגום', r.sampleTap==='yes'?'כן':'לא'] : ['מז"ח ומד מים', ''];
+}
+
 function exportCSV(){
   var all=DB.getAll();
   if(!all.length){toast('אין נתונים לייצוא');return;}
-  var h=['תאריך','ישוב','שם מפעל','מספר מז"ח','קוטר','כיול בתוקף','תאריך בדיקה','מספר מד מים','סוג מד','קו רוחב','קו אורך','דיוק GPS','הערות'];
-  var rows=all.map(function(r){return[r.ts,r.city||'',r.facility||'',r.mzid,r.mzsz,r.calib==='yes'?'כן':'לא',r.calibCheckDate||'',r.mtid||'',r.mttyp||'',r.lat||'',r.lng||'',r.acc||'',r.notes||''];});
+  var h=CSV_HEAD.concat(['סוג רשומה','פיית דיגום מותקנת']);
+  var rows=all.map(function(r){return recBase(r).concat(recSample(r));});
   var csv='\uFEFF'+[h].concat(rows).map(function(row){return row.map(function(v){return '"'+String(v).replace(/"/g,'""')+'"';}).join(',');}).join('\n');
   var a=document.createElement('a');
   a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
@@ -789,21 +978,39 @@ function exportZIP(){
   var imgFolder = zip.folder('תמונות');
 
   // CSV
-  var h=['תאריך','ישוב','שם מפעל','מספר מז"ח','קוטר','כיול בתוקף','תאריך בדיקה','מספר מד מים','סוג מד','קו רוחב','קו אורך','דיוק GPS','הערות','קובץ תמונת מזח','קובץ תמונת מד'];
+  var h=CSV_HEAD.concat(['קובץ תמונת מזח','קובץ תמונת מד','סוג רשומה','פיית דיגום מותקנת','קובץ תמונת נקודת דיגום']);
   var rows=[];
+  var used={};
+
+  // מונע דריסת קבצים כששני שמות זהים
+  function uniq(name){
+    if(!used[name]){ used[name]=1; return name; }
+    var dot=name.lastIndexOf('.'), stem=name.slice(0,dot), ext=name.slice(dot), n=2;
+    while(used[stem+'_'+n+ext]) n++;
+    used[stem+'_'+n+ext]=1;
+    return stem+'_'+n+ext;
+  }
+  function safe(s){ return String(s).replace(/[\/\\:*?"<>|]/g,'-').replace(/\s+/g,'_'); }
 
   all.forEach(function(r, idx){
-    var base = (r.city||'')+'_'+(r.mzid||idx).toString().replace(/[\/\\:*?"<>|]/g,'-');
-    var mzFile='', mtFile='';
-    if(r.mzImg){
-      mzFile = base+'_מזח.jpg';
-      imgFolder.file(mzFile, dataURLtoBlob(r.mzImg));
+    var mzFile='', mtFile='', spFile='';
+    if(isSample(r)){
+      if(r.spImg){
+        spFile = uniq(safe(r.city||'')+'_'+safe(r.facility||'')+'_דיגום.jpg');
+        imgFolder.file(spFile, dataURLtoBlob(r.spImg));
+      }
+    } else {
+      var base = (r.city||'')+'_'+(r.mzid||idx).toString().replace(/[\/\\:*?"<>|]/g,'-');
+      if(r.mzImg){
+        mzFile = uniq(base+'_מזח.jpg');
+        imgFolder.file(mzFile, dataURLtoBlob(r.mzImg));
+      }
+      if(r.mtImg){
+        mtFile = uniq(base+'_מד.jpg');
+        imgFolder.file(mtFile, dataURLtoBlob(r.mtImg));
+      }
     }
-    if(r.mtImg){
-      mtFile = base+'_מד.jpg';
-      imgFolder.file(mtFile, dataURLtoBlob(r.mtImg));
-    }
-    rows.push([r.ts,r.city||'',r.facility||'',r.mzid,r.mzsz,r.calib==='yes'?'כן':'לא',r.calibCheckDate||'',r.mtid||'',r.mttyp||'',r.lat||'',r.lng||'',r.acc||'',r.notes||'',mzFile,mtFile]);
+    rows.push(recBase(r).concat([mzFile,mtFile],recSample(r),[spFile]));
   });
 
   var csv='\uFEFF'+[h].concat(rows).map(function(row){return row.map(function(v){return '"'+String(v).replace(/"/g,'""')+'"';}).join(',');}).join('\n');
